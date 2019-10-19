@@ -1,0 +1,42 @@
+Column Name,Description
+AcademicYear,Academic year identifier in format xxxx-xx
+ISDCode,State of Michigan Code for the Intermediate School District (ISD) 
+ISDName,Name of Intermediate School District (ISD) 
+DistrictCode,State of Michigan Code for the School District
+DistrictName,Name of the School District
+BuildingCode,State of Michigan Code for the School Building
+BuildingName,Name of the School Building
+StudentGroup,Student Group; this file does not disaggregate by student group
+ContentAreaName,"Name of the content area (i.e., subject) tested"
+Grade,Grade tested; this file does not disaggregate by grade
+nValidTested,Number of students with a valid state assessment record
+nMetProficient,Number of valid tested students that met proficiency on the state assessment
+nNotMetProficient,Number of valid tested students that did not meet proficiency on the state assessment
+PctMetProficient,Percent of valid tested students that met proficiency
+nTotalEnrolled,Total number of enrolled students as of Michigan's Fall Count Day
+nTestedGrades,Number of students enrolled in tested grades
+nAIAN,Number of enrolled American Indian or Alaska Native students
+nAsian,Number of enrolled Asian students
+nBlack,Number of enrolled Black or African American students
+nHispanic,Number of enrolled Hispanic or Latino students
+nNHPI,Number of enrolled Native Hawaiian or Pacific Islander students
+nTMR,Number of enrolled Two or more races students
+nWhite,Number of enrolled White students
+nED,Number of enrolled Economically Disadvantaged students
+nEL,Number of enrolled English Learner students
+nSE,"Number of enrolled Special Education students (i.e., Students with Disabilities)"
+nMale,Number of enrolled Male students
+nFemale,Number of enrolled Female students
+PctTestedGrades,Percent of enrolled students enrolled in tested grades
+PctAIAN,Percent of enrolled students that are American Indian or Alaska Native
+PctAsian,Percent of enrolled students that are Asian
+PctBlack,Percent of enrolled students that are Black or African American
+PctHispanic,Percent of enrolled students that are Hispanic or Latino
+PctNHPI,Percent of enrolled students that are Native Hawaiian or Pacific Islander
+PctTMR,Percent of enrolled students that are Two or more races
+PctWhite,Percent of enrolled students that are White
+PctED,Percent of enrolled students that are Economically Disadvantaged
+PctEL,Percent of enrolled students that are English Learner
+PctSE,"Percent of enrolled students that are Special Education (i.e., Students with Disabilities)"
+PctMale,Percent of enrolled students that are Male
+PctFemale,Percent of enrolled students that are Female

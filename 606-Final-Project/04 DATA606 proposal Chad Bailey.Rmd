@@ -1,0 +1,70 @@
+---
+title: DATA 606 Data Project Proposal
+author: Chad Bailley
+---
+
+### Data Preparation
+
+```{r setup, echo=TRUE, warning=FALSE, message=FALSE}
+## load data
+    fileLocation1 <- '02 Proficiency Data with Entity Demographics.csv'
+    proficiency <-read.csv(fileLocation1, sep = ',')
+
+## check the first few records 
+    head(proficiency)
+
+```
+
+
+### Research question 
+
+To what extent does the rate of economic disadvantage correlate with proficiency on state assessments and by how much does that correlation vary across content areas.
+
+
+
+### Cases 
+
+In this data set each record is a single case representing a school's rate proficiency on the state assessment for a given content area (Mathematics, English Language Arts, Science, and Social Studies) and academic year. The dataset contains multiple years and so has `r nrow(proficiency)` cases.
+
+
+
+### Data collection 
+
+This dataset was acquired through a request to the Michigan Department of Education.
+
+
+
+### Type of study 
+
+This dataset contains observational data.
+
+
+
+### Data Source 
+
+This data is publically available at 
+
+
+
+
+### Dependent Variable
+
+The response variable in this dataset is [PctMetProficient] which gives the percent of students that are proficient on the state assessment for the given year, building, and content area.
+
+
+
+### Independent Variable
+
+There are multiple independent variables in this dataset. The ones used for this project will be 
+* [PctEd], a quantative which gives the percent of students that are economically disadvantaged
+* [ContentAreaName], a qualitative variable giving the content area of the state assessment
+
+
+### Relevant summary statistics 
+
+**Provide summary statistics for each the variables. Also include appropriate visualizations related to your research question (e.g. scatter plot, boxplots, etc). This step requires the use of R, hence a code chunk is provided below. Insert more code chunks as needed.**
+
+```{r}
+
+```
+
