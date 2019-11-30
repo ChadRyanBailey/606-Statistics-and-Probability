@@ -1,9 +1,15 @@
 ---
 title: "Chapter 8 - Introduction to Linear Regression"
-author: ""
+author: 'Homework completed by Chad Bailey'
 output:
-    pdf_document:
-        extra_dependencies: ["geometry", "multicol", "multirow", "xcolor"]
+  pdf_document:
+    extra_dependencies:
+    - geometry
+    - multicol
+    - multirow
+    - xcolor
+  html_document:
+    df_print: paged
 ---
 
 ```{r setup, include=FALSE}
@@ -104,6 +110,7 @@ plot(bdims$hgt ~ bdims$sho.gi,
 ##  Student response to probelm 8.13
 
 ##  (a)   Shoulder girth and height have a relatively strong positive relationship
+
 ##  (b)   If shoulder girth was changed to be measured in inches while height remained
 ##        in centimeters, the slope of the regression line would become steeper as
 ##        inches are larger and therefore would compress the x-axis. However, values
@@ -139,7 +146,7 @@ plot(bdims$hgt ~ bdims$sho.gi,
     ##  R                           = 0.67
 
 ##  Derived values
-    ##  b1    = regresion slope     = R * (y_sd / x_sd)  
+    ##  b1    = regresion slope     = (y_sd / x_sd) * R
     ##                              = 0.67 * (9.41 / 10.37)
     ##                              = 0.61
 
@@ -148,7 +155,7 @@ plot(bdims$hgt ~ bdims$sho.gi,
     ##                              = 99.32
 
   
-##  (a) hieght_hat = 0.67 * shoulder_grith_hat + 99.32
+##  (a) hieght_hat = 0.61 * shoulder_grith_hat + 99.32
   
 ##  (b) slope:  for every 1 cm increase in shoulder_girth there is a 0.67 increase
 ##              in height
@@ -161,20 +168,32 @@ plot(bdims$hgt ~ bdims$sho.gi,
 ##      This means that 44.89% of the variance observed in height can be explained
 ##      by the variable shoulder_girth
 
-##  
 
 
+##  (d) Using the model, a student with shoulder girth of 100cm would be predicted to
+##      have a height of 160.32 cm
+        0.61 * 100 + 99.32   
+
+##  (e) The residual for the student in part (d)
+##        residual  = actual - prediction
+##                  = 160 - 160.32
+##                  = -0.32
+##
+##      The residual would be -0.32 which means that the model overpredicted the 
+##      individual's height by 0.32cm.
+
+##  (f) No, this model would not be appropriate to use to predict the height of a
+##      one-year old with a height of 56cm. As explained in part (b) the model's
+##      intercept of 99.32 likely indicates the model was built on a sample of 
+##      random adults and therefore is only appropriate to apply the model to adults.
   
 ```
 
 
-
-
-
-
-
-
 \clearpage
+
+
+
 
 **Cats, Part I.** (8.26, p. 327) The following regression output is for predicting the heart weight (in g) of cats from their body weight (in kg). The coefficients are estimated using a dataset of 144 domestic cats.
 
@@ -221,11 +240,36 @@ box()
 (d) Interpret $R^2$.
 (e) Calculate the correlation coefficient.
 
-
-
 --------------------------------------------------------------------------------
 
+```{r problem826}
+## Student response to problem 8.26
+
+##  (a) linear model:   y = -0.357 + 4.034 * x
+
+##  (b) The intercept is -0.357. This means if the cat's body weight was zero (0.0)
+##      the model would predict a heart weight of -0.357. This indicates that model
+##      does not have a great fit on the lower end cat body weight since the 
+##      intercept is not possible to be observed.
+
+##  (c) The slope is 4.034. This means the model predicts an increase of 4.034g for
+##      heart weight for every increase of 1kg in the cat's body weight.
+
+##  (d) The R^2 value is 0.6466. This means 64.66% of the variation in heart weight
+##      is explained by body weight.
+
+##  (f) Calculating the correlation coeffient (R).
+##        R = sqrt(R^2); and the sign is the same as B1 (slope) coefficient
+##          = sqrt(0.6466)
+##          = 0.8041
+##      The correlation coefficient (R) is 0.8041.
+
+```
+
 \clearpage
+
+
+
 
 **Rate my professor.** (8.44, p. 340) Many college courses conclude by giving students the opportunity to evaluate the course and the instructor anonymously. However, the use of these student evaluations as an indicator of course quality and teaching effectiveness is often criticized because these measures may reflect the influence of non-teaching related characteristics, such as the physical appearance of the instructor. Researchers at University of Texas, Austin collected data on teaching evaluation score (higher score means better) and standardized beauty score (a score of 0 means average, negative score means below average, and a positive score means above average) for a sample of 463 professors. The scatterplot below shows the relationship between these variables, and also provided is a regression output for predicting teaching evaluation score from beauty score.
 
@@ -307,7 +351,36 @@ abline(h = 0, lty = 3)
 ```
 
 
+```{r problem844}
+## Student response to problem 8.44
 
+##  (a) Calculating the slope (b1) of the model
+##        b1  = (ybar - b0) / xbar
+##            = (3.9983 - 4.010) / (-0.0883)
+##            = 0.1325
+
+##  (b) Yes, these data provide convincing evidence that the slope of the
+##      relationship is positive. The slope coefficient is positive and 
+##      visually the scatterplot shows a slight positive relationship.
+
+##  (c) Evaluating the conditions of linear regression:
+##
+##        Linearity:  the data appear to have a mostly linear relationship in the
+##                    Beauty vs Teaching evaluation scatterplot.
+
+##        Nearly normal residuals:  the residuals appear nearly normally distributed
+##                                  via the histogram of residuals
+
+##        Constant variability: residuals appear to have no correlation with Beauty
+##                              score in scatterplot of Beauty vs Residuals
+
+##        Independent observations: residuals appear to have no correlation with
+##                                  order of data collection meaning the data are 
+##                                  all likely independent observations.
+
+
+
+```
 
 
 
