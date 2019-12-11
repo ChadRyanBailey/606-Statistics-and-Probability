@@ -1,6 +1,7 @@
 ---
-title: DATA 606 Data Project Proposal
-author: Chad Bailley
+title: "DATA 606 Data Project Proposal"
+author: "Chad Bailley"
+output: pdf_document
 ---
 
 ### Data Preparation
@@ -42,7 +43,7 @@ This dataset contains observational data.
 
 ### Data Source 
 
-This data is publically available at 
+This data is publically available at https://raw.githubusercontent.com/ChadRyanBailey/606-Statistics-and-Probability/master/606-Final-Project/02%20Proficiency%20Data%20with%20Entity%20Demographics.csv
 
 
 
@@ -62,9 +63,138 @@ There are multiple independent variables in this dataset. The ones used for this
 
 ### Relevant summary statistics 
 
-**Provide summary statistics for each the variables. Also include appropriate visualizations related to your research question (e.g. scatter plot, boxplots, etc). This step requires the use of R, hence a code chunk is provided below. Insert more code chunks as needed.**
+#### Initial review of the data
 
 ```{r}
+## get a general summary of each field
+summary(proficiency)
 
 ```
 
+The summary shows two issues: 
+
+* There are many unneeded columns and 
+* Some of the columns of interest have supressed values. These records will need to
+have values imputed or be removed.
+
+#### Reducing the width of the data
+A new dataset is created to onlyl contain the columns of interest and to rename
+some columns to have shorter names
+
+```{r}
+
+  library(dplyr)
+  library(ggplot2)
+
+  proficiencySlim <- proficiency %>%
+    ## limit to only the fields of current interest
+    select (AcademicYear
+            ,BuildingCode
+            ,ContentAreaName
+            ,nValidTested
+            ,nMetProficient
+            ,nNotMetProficient
+            ,PctMetProficient
+            ,nTotalEnrolled
+            ,nED
+            ,PctED) %>%
+    ## rename to shorter field names
+    rename(nTested = nValidTested
+           ,nProf = nMetProficient
+           ,nNonProf = nNotMetProficient
+           ,PctProf = PctMetProficient
+           ,nEnrolled = nTotalEnrolled) 
+```
+  
+#### Dealing with suppression
+As can be seen in the columns {nTested, nProf,  nNonProf, and PctProf}, the file has records that have been suppressed. This is typical for public education data. The suppression is done to protect the privacy of small groups of students.  
+  
+
+Flag records that have suppression applied and count records with each type of
+suppression case
+```{r}
+# add flags to review each suppression condition
+    proficiencySlim <- proficiencySlim %>%
+      mutate( HasTestedLT10 = ifelse(nTested == '< 10', 1, 0)
+              ,HasProfLT3 = ifelse(nProf == '< 3', 1, 0)
+              ,HasNonProfLT3 = ifelse(nNonProf == '< 3', 1, 0)
+              ,HasEitherProfOrNonProfLT3 = ifelse(HasProfLT3 == 1 | HasNonProfLT3 == 1, 1, 0)
+              ,HasRecord = 1)
+
+
+# get the count of records by suppression conditions
+    proficiencySlim %>%
+      summarise(nTotal = sum(HasRecord)
+                ,nTestedLT10 = sum(HasTestedLT10)
+                ,nProfLT3 = sum(HasProfLT3)
+                ,nNonProfLT3 = sum(HasNonProfLT3)
+                ,nEitherProfOrNonProfLT3 = sum(HasEitherProfOrNonProfLT3))
+```
+
+##### Remove records where values cannot be imputed
+Remove records with less than 10 valid tested students as all data for those records
+is supressed and a value for imputation cannot be applied
+```{r}
+
+## remove records with < 10 valid tested; all data for these records are suppressed
+  proficiencySlim <- proficiencySlim %>%
+    filter(HasTestedLT10 == 0) 
+
+  nrow(proficiencySlim)
+```
+  
+#### Impute supressed values where possible
+Since <3 is equal to the set {0, 1, 2}, the middle value "1" will be used as the imputed value. Also, percentages will be calculated for suppressed records using the imputed value.  
+```{r}  
+## deal with cases where suppression is applied because nearly all nor nearly
+## none of the students were proficient
+proficiencySlim <- proficiencySlim %>%
+    #convert factors to characters
+    mutate(nTested = as.character(nTested)
+           ,nProf = as.character(nProf)
+           ,nNonProf = as.character(nNonProf)
+           ,PctProf = as.character(PctProf)
+           ) %>%
+    
+    #convert the characters to numerics
+    mutate(nTested = as.numeric(nTested)
+           ,nProf = as.numeric(nProf)
+           ,nNonProf = as.numeric(nNonProf)
+           ,PctProf = as.numeric(PctProf)
+           ) %>%
+    
+    # for count variables (nProf and nNonProf) replace the suppression flag with imputed count
+    mutate(nProf = ifelse(HasProfLT3 == 1, 1, nProf)
+           ,nProf = ifelse(HasNonProfLT3 == 1, nTested - 1, nProf)
+
+           ,nNonProf = ifelse(HasNonProfLT3 == 1, 1, nNonProf)
+           ,nNonProf = ifelse(HasProfLT3 == 1, nTested - 1, nNonProf)
+           ) %>%
+
+    # for percentage variables (PctProf and PctNonProf) replace the suppression flag 
+    # with a calucuated percentage using the imputed counts
+    mutate(PctProf = ifelse(HasProfLT3 == 1, round(nProf*1.0/nTested*100.0, 2), PctProf)
+           , PctProf = ifelse(HasNonProfLT3 == 1, round(nProf*1.0/nTested*100.0, 2), PctProf))
+```
+
+##### Summarize the "cleaned" dataset
+
+Summary statistics for each variable
+
+```{r}
+## get 
+summary(proficiencySlim)
+
+```
+
+
+Scatter plot of the relationship of interest
+```{r}
+ggplot(proficiencySlim
+       , aes(x = PctED, y = PctProf)) + 
+  geom_point(aes(size = nEnrolled, color = ContentAreaName), alpha = 0.5) + 
+  facet_wrap(~ContentAreaName)+ 
+  geom_smooth(method=lm) 
+
+
+```
