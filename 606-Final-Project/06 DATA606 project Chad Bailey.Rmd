@@ -1,33 +1,392 @@
 ---
-title: DATA 606 Data Project Proposal
-author: 
+title: "DATA 606 Final Data Project"
+author: "Chad Bailey"
+output: pdf_document
 ---
-
-
-```{r echo=FALSE}
-# load data
-
-```
 
 
 ### Part 1 - Introduction
 
+The following analysis will explore whether there is a significant linear 
+relationship between the percent of students in a school that are economically 
+disadvantaged and the school's rate of proficiency on state assessments.
 
-### Part 2 - Data
+This is important as the presence of a strong linear relationship between
+a measure of poverty and educational outcomes would indicate that state and
+federal policies, as currenlty implemented, are largely being unsuccessful at 
+mitigating the effects of poverty on educational outcomes.
+
+The possibility of a linear relationship will be evaluated through linear 
+regression modeling. Specifically looking to test whether there is strong enough 
+evidence to determine that the true slope of the linear relationship is not zero.
+
+This can be formally stated as
+H0: The true slope of the linear relationship is zero.
+H1: The true slope of the linear relationship is not zero.
+
+
+### Part 2a - Data Descriptions
+
+####Data Collection
+This dataset to be used in this analysis was obtained by a request to the Michigan
+Department of Education and is now publicly available at https://raw.githubusercontent.com/ChadRyanBailey/606-Statistics-and-Probability/master/606-Final-Project/02%20Proficiency%20Data%20with%20Entity%20Demographics.csv   
+
+####Cases
+The full dataset has 56,372 cases. Each case in this dataset represents a school's
+proficiency rate on the state assessment for a given content area and academic year. 
+The full dataset has cases for four content areas (Mathematics, English Language Arts, 
+Science, and Social Studies) and five academic years (2014-15 through 2018-19).
+
+For this analysis, the data will be limited to only use 2018-19 English Language Arts 
+and Mathematics records. This still leaves 6,386 cases.
+
+####Variables
+This analysis will make use of two numerical variables within each case: PctED and 
+PctMetProficient.  
+
+The first variable [PctED] gives the percent of all enrolled students in the school 
+that were reported as Economically Disadvantaged (ED). The category ED is defined in 
+federal law and is mostly based on family income. This variable is a school level 
+variable. This means it will vary across schools and academic years but will not vary 
+across content areas for a school within a year.  
+
+The second variable [PctMetProficient] is the percent of valid tested students that were 
+proficient on the state assessment. Within this dataset this variable is only provided at
+for all grades combined but it should be noted that the grades assessed vary by content 
+area. Math and English Language Arts are tested in grades 3-8 & 11. Social Studies is 
+tested in grades 5, 8, & 11. Science was tested in grades 4, 7, & 11 but only has records 
+up through 2016-17. Michigan's state assessment in science was undergoing a redesign and 
+was only a field test administration for 2017-18 and 2018-19.
+
+####Type of study
+This analysis is an observational study. It is using data that were collected from schools 
+as they are currently configured. The author of this study had no control over which 
+students were assigned to which schools nor how the grades of those schools were configured.   
+
+#### Scope of Inference - Generalizability
+The full dataset does not meet the conditions of generalizability (i.e., random sampling) 
+but this analysis will also use simulation to randomly subsample the full dataset. The 
+simulation results will then be generalizable to the population (all schools within the 
+state of Michigan).  
+
+However, it should also be noted that the full dataset is not a random sample because 
+education data is different in some respects. Primarily that by law a near full population 
+census is required for both variables (PctED and PctMetProficient). States are required to 
+assess all students in applicable grades for a content area and states are required to 
+publicly report key demographics such as the percent economically disadvantaged for all 
+schools.
+
+####Scope of Inference - Causality
+No statements of causality will be possible from this study. The necessary condition of 
+random assignment is not met. The school's variables are aggregations of the attributes of 
+the students at that school and students are not randomly assigned to schools.  
+
+### Part 2b - Data Load & Cleansing
+
+#### Load Full Dataset
+```{r LoadData}
+## load data
+    fileLocation1 <- 'Proficiency with Entity Demographics - Data.csv'
+    proficiency <-read.csv(fileLocation1, sep = ',')
+    
+```
+
+
+#### Subset the data
+A new dataset is created to only contain the rows and columns of interest
+```{r subset, message=FALSE, warning=FALSE}
+
+  library(dplyr)
+
+  proficiencySlim <- proficiency %>%
+    ## limit to only the fields of current interest
+    filter (AcademicYear == '2018-19'
+            & ContentAreaName %in% c('Mathematics', 'English Language Arts')) %>%
+    select (AcademicYear
+            ,BuildingCode
+            ,ContentAreaName
+            ,nValidTested
+            ,nMetProficient
+            ,nNotMetProficient
+            ,PctMetProficient
+            ,nTotalEnrolled
+            ,nED
+            ,PctED) %>%
+    ## rename to shorter field names
+    rename(nTested = nValidTested
+           ,nProf = nMetProficient
+           ,nNonProf = nNotMetProficient
+           ,PctProf = PctMetProficient
+           ,nEnrolled = nTotalEnrolled) 
+  
+  #summary(proficiencySlim)
+  #summary(proficiency)
+```
+  
+#### Dealing with suppression
+As can be seen in the columns {nTested, nProf,  nNonProf, and PctProf}, the file 
+has records that have been suppressed. This is typical for public education data. 
+The suppression is done to protect the privacy of small groups of students.  
+  
+
+Flag records that have suppression applied and count records with each type of
+suppression case
+```{r suppression, warning=FALSE}
+# add flags to review each suppression condition
+    proficiencySlim <- proficiencySlim %>%
+      mutate( HasTestedLT10 = ifelse(nTested == '< 10', 1, 0)
+              ,HasProfLT3 = ifelse(nProf == '< 3', 1, 0)
+              ,HasNonProfLT3 = ifelse(nNonProf == '< 3', 1, 0)
+              ,HasEitherProfOrNonProfLT3 = ifelse(HasProfLT3 == 1 | HasNonProfLT3 == 1, 1, 0)
+              ,HasRecord = 1)
+
+
+# get the count of records by suppression conditions
+    proficiencySlim %>%
+      summarise(nTotal = sum(HasRecord)
+                ,nTestedLT10 = sum(HasTestedLT10)
+                ,nProfLT3 = sum(HasProfLT3)
+                ,nNonProfLT3 = sum(HasNonProfLT3)
+                ,nEitherProfOrNonProfLT3 = sum(HasEitherProfOrNonProfLT3))
+```
+
+##### Remove records where values cannot be imputed
+Remove records with less than 10 valid tested students as all data for those records
+is supressed and a value for imputation cannot be applied
+```{r removeSmallCases}
+
+## remove records with < 10 valid tested; all data for these records are suppressed
+  proficiencySlim <- proficiencySlim %>%
+    filter(HasTestedLT10 == 0) 
+
+  nrow(proficiencySlim)
+```
+  
+#### Impute supressed values where possible
+Since <3 is equal to the set {0, 1, 2}, the middle value "1" will be used as 
+the imputed value. Also, percentages will be calculated for suppressed records 
+using the imputed value.  
+```{r imputeData, warning=FALSE}  
+## deal with cases where suppression is applied because nearly all nor nearly
+## none of the students were proficient
+proficiencySlim <- proficiencySlim %>%
+    #convert factors to characters
+    mutate(nTested = as.character(nTested)
+           ,nProf = as.character(nProf)
+           ,nNonProf = as.character(nNonProf)
+           ,PctProf = as.character(PctProf)
+           ) %>%
+    
+    #convert the characters to numerics
+    mutate(nTested = as.numeric(nTested)
+           ,nProf = as.numeric(nProf)
+           ,nNonProf = as.numeric(nNonProf)
+           ,PctProf = as.numeric(PctProf)
+           ) %>%
+    
+    # for count variables (nProf and nNonProf) replace the suppression flag with imputed count
+    mutate(nProf = ifelse(HasProfLT3 == 1, 1, nProf)
+           ,nProf = ifelse(HasNonProfLT3 == 1, nTested - 1, nProf)
+
+           ,nNonProf = ifelse(HasNonProfLT3 == 1, 1, nNonProf)
+           ,nNonProf = ifelse(HasProfLT3 == 1, nTested - 1, nNonProf)
+           ) %>%
+
+    # for percentage variables (PctProf and PctNonProf) replace the suppression flag 
+    # with a calucuated percentage using the imputed counts
+    mutate(PctProf = ifelse(HasProfLT3 == 1, round(nProf*1.0/nTested*100.0, 2), PctProf)
+           , PctProf = ifelse(HasNonProfLT3 == 1, round(nProf*1.0/nTested*100.0, 2), PctProf))
+
+
+# drop columns
+    proficiencySlim <- select(proficiencySlim
+                              , -c(HasTestedLT10, HasProfLT3, HasNonProfLT3, HasRecord))
+# rename column
+    proficiencySlim <- proficiencySlim %>%
+      rename(HasImputedValues = HasEitherProfOrNonProfLT3)
+    
+    
+# get datasets partitioned by content area
+    proficiency_all <- proficiencySlim
+    proficiency_math <- proficiency_all %>% filter(ContentAreaName == 'Mathematics')
+    proficiency_ela <- proficiency_all %>% filter(ContentAreaName == 'English Language Arts')
+    
+    
+```
+
 
 
 ### Part 3 - Exploratory data analysis
 
+#### Initial Summary of the Data
+```{r summarizeData}
+
+#head(proficiency_all)
+summary(proficiency_all)
+
+```
+
+#### Scatterplot of the primary variables
+```{r scatterplots, message=FALSE, warning=FALSE}
+library(ggplot2)
+
+
+ggplot(proficiency_all
+       , aes(x = PctED, y = PctProf)) + 
+  geom_point(aes(size = nEnrolled, color = ContentAreaName), alpha = 0.5) + 
+  geom_smooth(method=lm) 
+
+ggplot(proficiency_all
+       , aes(x = PctED, y = PctProf)) + 
+  geom_point(aes(size = nEnrolled, color = ContentAreaName), alpha = 0.5) + 
+  facet_wrap(~ContentAreaName)+ 
+  geom_smooth(method=lm) 
+```
+
+#### Initial Thoughts on the data's relationships
+The scatterplots clearly show a negative linear relationship. Visually it appears to
+be a strong enough correlation to justify rejecting H0. HOwever, that decision will
+be postponed until after the inference tests have been run.  
+
 
 ### Part 4 - Inference
+####Checking the conditions for linear regression
+```{r modelBuild}
+
+  m_allContentAreas <- lm(data = proficiency_all, formula = PctProf ~ PctED)
+  m_ela <- lm(data = proficiency_ela, formula = PctProf ~ PctED)
+  m_math <- lm(data = proficiency_math, formula = PctProf ~ PctED)
+
+
+plot(m_allContentAreas)
+
+
+## Linearity: Residuals vs Fitted; the data appear to have a mostly linear
+##            relationship
+
+## Nearly normal residuals: Normal Q-Q; the data appear to be mostly clustered 
+##                          around the normal line, although there is meaningful 
+##                          deviation at the right tail
+
+## Constant variability:  Scale-Location; the data appear mostly evenly spread
+##                        across the x-axis and the regression line is nearly
+##                        horizontal (which is desired).
+
+## Independent observations:  Residuals vs Leverage; none of the variables meet 
+##                            the thresholds for "influential values".
+
+```
+
+#### Theoretical Inference
+##### All Content Areas
+```{r theoinf_all}
+  summary(m_allContentAreas)
+  confint(m_allContentAreas, c('PctED'), 0.95)
+
+```
+The p-value for PctED is less than 0.05. Additionally, the 95%
+confidence interval does not include 0. Both of these offer strong
+effidence to reject the null hypothesis (H0).
+
+##### ELA
+```{r theoinf_ela}
+  summary(m_ela)
+  confint(m_ela, c('PctED'), 0.95)
+```
+The p-value for PctED is less than 0.05. Additionally, the 95%
+confidence interval does not include 0. Both of these offer strong
+effidence to reject the null hypothesis (H0).
+
+##### Math
+```{r theoinf_math}
+  summary(m_math)
+  confint(m_math, c('PctED'), 0.95)
+```
+The p-value for PctED is less than 0.05. Additionally, the 95%
+confidence interval does not include 0. Both of these offer strong
+effidence to reject the null hypothesis (H0).  
+
+
+#### Simulated Inference
+
+##### Build the Simulations
+```{r siminf}
+
+  # set sample size and iterations
+    n <- 50
+    iterations <- 500
+  
+  # simulate all content areas
+      # initialize storage vector
+      coeff_pctED_all <- rep(0, iterations)
+    
+      # loop to run 5000 regression models based on random samples of size 50 cases
+      for(i in 1:iterations){
+        set.seed(i); proficiency_samples <- sample_n(proficiency_all, n, replace = FALSE)
+        m <- lm(data = proficiency_samples, formula = PctProf ~ PctED)
+        coeffs_all <-coefficients(m)
+        coeff_pctED_all[i] <- round(coeffs_all[2], 4)  #only store the PctED coefficient
+      }
+ 
+ # simulate ELA
+      # initialize storage vector
+      coeff_pctED_ela <- rep(0, iterations)
+    
+      # loop to run 5000 regression models based on random samples of size 50 cases
+      for(i in 1:iterations){
+        set.seed(i); proficiency_samples <- sample_n(proficiency_ela, n, replace = FALSE)
+        m <- lm(data = proficiency_samples, formula = PctProf ~ PctED)
+        coeffs_all <-coefficients(m)
+        coeff_pctED_ela[i] <- round(coeffs_all[2], 4)  #only store the PctED coefficient
+      }
+    
+ # simulate math
+      # initialize storage vector
+      coeff_pctED_math <- rep(0, iterations)
+    
+      for(i in 1:iterations){
+        set.seed(i); proficiency_samples <- sample_n(proficiency_math, n, replace = FALSE)
+        m <- lm(data = proficiency_samples, formula = PctProf ~ PctED)
+        coeffs_all <-coefficients(m)
+        coeff_pctED_math[i] <- round(coeffs_all[2], 4)  #only store the PctED coefficient
+      }
+ 
+```
+
+##### Review Simulation Outputs
+```{r sim_output}
+  sim_output <- summary(coeff_pctED_all)
+  sim_output <-rbind(sim_output, summary(coeff_pctED_ela))
+  sim_output <-rbind(sim_output, summary(coeff_pctED_math))
+  
+  sim_output <- cbind(c('All', 'ELA', 'Math'), sim_output)
+  
+  sim_output
+  
+```
+The outputs of the simulation show that the full range of the data do not include
+zero. This is true for all content areas combined and for each content area seperately.
+This again supports rejecting the null hypothesis.
 
 
 ### Part 5 - Conclusion
+The inference tests confirm what was suspected in the reivew of the scatterplots,
+that the correlation is significant. There is strong evidence to reject the 
+null hypothesis. We can say with 95% certainty that the percent of enrolled students
+reported as economically disadvantaged is a strong predictor of a school's proficiency
+rates on state assessments. Furthermore, this analysis shows this is true both when 
+content areas are combined or evaluated seperately.  
+
+These results indicate that at the state level, current policy is typically not
+successful in mitigating the effects of poverty on students educational outcomes. There
+were cases where there were high poverty schools that still had relatively high rates
+of proficiency (i.e., outperformed the model) but they were by far the exception and not
+the rule.
+
+Further points of possible continuing analysis would be review of high poverty schools that
+are outperforming the model and comparing them with other high poverty schools with outcomes
+near and below the model. Specifically, if data about differences in instructional practices,
+curricular tools, or observational data from educational experts visiting schools from all
+three buckts (above, near, and below the model).
 
 
-### References
-
-
-### Appendix (optional)
-
-Remove this section if you don't have an appendix

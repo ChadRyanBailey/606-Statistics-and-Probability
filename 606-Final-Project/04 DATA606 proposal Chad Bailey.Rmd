@@ -78,7 +78,7 @@ The summary shows two issues:
 have values imputed or be removed.
 
 #### Reducing the width of the data
-A new dataset is created to onlyl contain the columns of interest and to rename
+A new dataset is created to only contain the columns of interest and to rename
 some columns to have shorter names
 
 ```{r}
